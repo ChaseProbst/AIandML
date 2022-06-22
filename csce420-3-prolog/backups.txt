@@ -1,0 +1,120 @@
+
+edge(1,2,2).
+edge(1,4,3).
+edge(1,3,4).
+edge(2,3,1).
+edge(3,4,2).
+edge(3,5,1).
+edge(4,5,2).
+
+connected(X,Y) :- edge(X,Y,_) ; edge(Y,X,_).
+connected(X,Y,Cost) :- edge(X,Y,Cost) ; edge(Y,X,_).
+
+edo(X,Y) :- edge(X,Y).
+
+fac(0,1).
+fac(N,X) :-
+        N > 0,
+        M is N - 1,
+        fac(M,Y),
+        X is Y * N.
+
+fare(5) :- false.
+fare(Y,B) :- edge(Y,B).
+fare(X,Y,B) :-
+        edge(X,Y),
+        fare(Y,B).
+
+% SUM SECTION
+
+listSum([],0).
+listSum( [A|B], X ) :-
+        listSum(B,Y),
+        X is Y + A.
+
+% APPENDING SECTION
+
+myapp(List,List).
+myapp(List, X, [NewList|X]) :- myapp(List, NewList).
+
+app([],List,List).
+app([Head|Tail], Same, [Head|Result]) :- app(Tail,Same,Result).
+ 
+
+% REALATION SECTION
+
+sibling(X,Y,Cost) :- arc(X,Y,Cost).
+sibling(X,Y) :- arc(X,Y,_).
+
+% FACTS
+
+arc(m,p,8).
+arc(q,p,13).
+arc(q,m,5).
+arc(k,q,3).
+
+minset(P,C,P,C).
+min([Pc,Cc], [Pt,Ct] , [Pb,Cb] ) :-
+        ( Cc =< Ct -> minset(Pc, Cc, Pb, Cb); minset(Pt, Ct, Pb, Cb)).
+
+pair(Path,Cost).
+
+% take two things out minimize thn put em back
+
+debagger(Bag,Min) :-
+        bagmin(Bag,Min).
+bagmin( [A,B|Bag] , Min) :-
+        ( length(Bag,Leng), Leng =< 0 -> min(A,B,Min);
+         min(A,B,C),
+         app([C],Bag,Newbag),
+         bagmin(Newbag,Min)).
+
+splitjob(A,B,Path) :-
+        bagger(A,B,Bag),
+        debagger(Bag,[Path,Cost]).
+
+bagjob(A,B,Path,Cost) :-
+         bagger(A,B,[[Path,Cost]|Bag]).
+
+bagger(A,B,Bag) :-
+        bagof(Pair,pathpair(A,B,Pair),Bag).
+
+pathpair(A,B,[Path_t,Cost_t]) :-
+        path(A,B, Path_t, Cost_t).
+
+path(A,B,Path,Cost) :-
+       travel(A,B,[A],Q),
+       reverse(Q,Path),
+        pathCostFinder(Path,Cost).
+
+travel(A,B,P,[B|P]) :-
+       connected(A,B,_).
+travel(A,B,Visited,Path) :-
+       connected(A,C),
+       C \== B,
+       \+member(C,Visited),
+       travel(C,B,[C|Visited],Path).
+
+pathCostFinder( Path, Cost ) :-
+        costWalk( Path, Cost ).
+
+costWalk( [A,B|Path] , Cost) :-
+        ( length(Path,Leng), Leng =< 0 -> priceCheck(A,B,Cost);
+        (priceCheck(A,B,Toll),
+        app([B],Path,Npath),
+        costWalk( Npath, TeleCost),
+        Cost is Toll + TeleCost )).
+priceCheck(A,B,Cost) :- edge(A,B,Cost).
+
+
+reflect(A,A).
+evalsafety(Qnode, Visited, Truth) :-
+        ( not(member(Qnode, Visited)) -> reflect(true,Truth);
+         reflect(false,Truth) ).
+               
+travelfork(Qnode, Visited, DownCost, SafeDownCost) :-
+        evalsafety(Qnode, Visited, Safe),
+        travelforkprong(Safe, DownCost, SafeDownCost).
+travelforkprong(false, _ ,SafeDownCost) :- SafeDownCost is 0.
+travelforkprong(true, DownCost,SafeDownCost) :- forkset(SafeDownCost, DownCost).
+forkset(DC,DC).
